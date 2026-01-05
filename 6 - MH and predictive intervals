@@ -1,4 +1,3 @@
-#diss week 6, correct
 library("tidyverse")
 library("ggplot2")
 library("maxLik")
@@ -60,7 +59,6 @@ mh_epi <- function(N,initial,V,y,x0,dt){
     psi.star <- psi_mat[i-1,]+mvrnorm(1, c(0,0,0), V)
     log_aprob <- logprior(psi.star)-logprior(psi_mat[i-1,])+add.loglikestar(psi.star,y,dt,x0)-add.loglikestar(psi_mat[i-1,],y,dt,x0)
     U <- runif(1)
-    if (is.na(log_aprob) || is.nan(log_aprob)) log_aprob <- -Inf
     if(log(U)<log_aprob){
       psi_mat[i,] <- psi.star
       j <- j+1
@@ -83,25 +81,17 @@ yvec <- eulerSIR(x0,gtruth, dt, T)
 Its <- yvec[,2]
 set.seed(1)
 y_obs <- Its+rnorm(length(Its),mean=0,sd=4)
-#Don't add noise to susceptibles - not used as the data
-#y_obs_sus <- yvec[,1]+rnorm(length(yvec[,1]),mean=0,sd=3)
-#sanity check
 plot(ts(yvec[,2],start=0,deltat=0.1))
 lines(ts(y_obs,start=0,deltat=0.1))
-###YOUR DATA HAS AN INTEROBSERVATION TIME OF 0.1 BUT
-###BUT THE LIKELIHOOD ASSUMES DATA AT INTEGER TIMES!!
 
-#To obtain data at integer times, USE THIS:
+#To obtain data at integer times
 Its <- yvec[1+(0:14)*10,2]
 set.seed(1)
 y_obs <- Its+rnorm(length(Its),mean=0,sd=3)
-#sanity check
 plot(ts(yvec[,2],start=0,deltat=0.1))
 lines(ts(y_obs,start=0,deltat=1))
 
-#NOW run the MCMC - use dt=0.1 to solve the ODE on a fine grid
-#Likelihood function will extract the I_t values at integer times
-
+#run MH
 set.seed(2)
 chain <- mh_epi(10000, log.gtruth,diag(c(0.0001,0.001,0.1)), y_obs,x0,dt)
 plot(ts(chain), ylab="beta")
@@ -116,7 +106,7 @@ chain4 <- mh_epi(10000, log.gtruth,(2.38^3/3)*var(chain3), y_obs,x0,dt)
 plot(ts(chain4))
 
 
-#week 7 code
+#generating predictive intervals
 T <- 14
 dt <- 0.1
 N=10000
@@ -141,19 +131,10 @@ I.mean=apply(I.mat,1,mean)
 I.lq=apply(I.mat,1,quantile,0.025)
 I.uq=apply(I.mat,1,quantile,0.975)
 
-
 S.mean <- apply(S.mat,1,mean)
 S.lq <- apply(S.mat,1,quantile,0.025)
 S.uq <- apply(S.mat,1,quantile,0.975)
 
-# plot(ts(I.mean))
-# lines(ts(I.lq))
-# lines(ts(I.uq))
-# lines(ts(y, start=0, deltat=1))
-
-#Plot and overlay data!
-#These are within sample predictives and therfore we expect 
-#tight intervals as not taking into account the noise.
 par(mfrow=c(1,1))
 plot(ts(I.mean,start=0,deltat=0.1),ylim=c(0,400), ylab="Infectives")
 lines(ts(I.lq,start=0,deltat=0.1),col=2)
@@ -179,8 +160,6 @@ plot(ts(y.mean,start=0,deltat=0.1),ylim=c(0,400), ylab="Infectives")
 lines(ts(y.lq,start=0,deltat=0.1),col=2)
 lines(ts(y.uq,start=0,deltat=0.1),col=2)
 lines(ts(y_obs,start=0,deltat=1),type="p", cex=0.65, col=1)
-#These are naturally less tight and will be even less tight if you 
-#increase the \sigma used to simulate the data
 
 #aim for multiplicative gaussian noise
 y.mat=matrix(0,nrow=T/dt+1,ncol=N)
