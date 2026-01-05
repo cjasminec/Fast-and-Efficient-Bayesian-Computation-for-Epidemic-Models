@@ -1,0 +1,95 @@
+library("tidyverse")
+library("ggplot2")
+library("maxLik")
+library("MASS")
+
+eulerSIR <- function(x0, theta, deltat, T){
+  s=T/deltat  #number of steps
+  iterations <- matrix(0,s+1,2)
+  #put in initial values
+  iterations[1,] <- x0
+  #define f(S,I)
+  S <- x0[1]
+  I <- x0[2]
+  for (i in 2:(s+1)) {
+    #calculate
+    dS <- -theta[1]*S*I
+    dI <- theta[1]*S*I-theta[2]*I
+    iterations[i,1] <- iterations[i-1,1]+ deltat*dS
+    iterations[i,2] <- iterations[i-1,2]+deltat*dI
+    S <- iterations[i,1]
+    I <- iterations[i,2]
+  }
+  return(iterations)
+}
+add.loglike_epi <- function(theta, y, deltat, x0){
+  N <- length(y)
+  inc <- 1/deltat
+  output <- eulerSIR(x0, exp(c(theta[1],theta[2])), deltat, N-1)
+  index <- 1+(0:(N-1))*inc
+  output <- output[index, 2]
+  loglikeindiv <- dnorm(y, output, exp(theta[3]), log=TRUE)
+  loglike <- sum(loglikeindiv)
+  return (loglike)
+}
+
+add.loglikestar <- function(theta, y, deltat, x0){
+    N <- length(y)
+    inc <- 1/deltat 
+    output <- eulerSIR(x0, exp(c(theta[1],theta[2])), deltat, N-1)
+    output <- output[1+(0:(N-1))*inc, 2]
+    loglike <- sum(dnorm(y, output, exp(theta[3]), log=TRUE))
+    return (loglike)
+}
+
+logprior <- function(psi.star){
+  return(sum(dnorm(psi.star, 0,1,log=TRUE)))
+}
+
+#to find /simulate log(pi given psi)
+mh_epi <- function(N,initial,V,y,x0,dt){
+  psi_mat <- matrix(0, ncol=3, nrow=N)
+  psi_mat[1,] <- initial
+  j=0
+  # start algorithm loop
+  for (i in 2:N){
+    psi.star <- psi_mat[i-1,]+mvrnorm(1, c(0,0,0), V)
+    log_aprob <- logprior(psi.star)-logprior(psi_mat[i-1,])+add.loglikestar(psi.star,y,dt,x0)-add.loglikestar(psi_mat[i-1,],y,dt,x0)
+    U <- runif(1)
+    if(log(U)<log_aprob){
+      psi_mat[i,] <- psi.star
+      j <- j+1
+    }else{
+    psi_mat[i,] <- psi_mat[i-1,]
+    }
+  }
+  
+  print(j/(N-1))
+  return(psi_mat)
+}
+
+gtruth <- c(beta=exp(-6),gamma=0.5, sigma=2)
+log.gtruth <- log(gtruth)
+x0 <- c(S=762,I=1)
+dt <- 0.1
+T <- 14
+yvec <- eulerSIR(x0,gtruth, dt, T)
+plot(ts(y))
+Its <- yvec[,2]
+
+
+set.seed(123)
+y_obs <- Its+rnorm(length(Its),mean=0,sd=1)
+
+#iterating metropolis hastings to tune via the Rule of Thumb
+chain <- mh_epi(10000, log.gtruth,diag(x=0.01,3,3), y_obs,x0,dt)
+plot(ts(exp(chain)))
+
+chain2 <- mh_epi(10000, log.gtruth,(2.38^3/3)*var(chain), y_obs,x0,dt)
+plot(ts(exp(chain2)))
+
+chain3 <- mh_epi(10000, log.gtruth,(2.38^3/3)*var(chain2), y_obs,x0,dt)
+plot(ts(chain3))
+
+
+
