@@ -33,39 +33,12 @@ add.loglike_epi <- function(theta, y, deltat, x0){
   return (loglike)
 }
 
-#to find loglike of psi given y
-#psi is theta (i.e. beta, gamma, sigma)
-# theta <- c(exp(-6), 0.5, 1)
-# psi <- log(theta)
-# set.seed(123)
-# yvec1 <- eulerSIR(c(762,1),theta, 0.1,14)
-# yvec <- yvec1[,2]
-# yvec.sim <- yvec+rnorm(length(yvec), 0,1)
-# # rnorm(100,yvec[round(seq(1,nrow(yvec), length.out=100)),2],3) #simulate for all 15 elts of mean vector
-# 
-# par(mfrow=c(1,1))
-# plot(yvec.sim)
-# 
-# Like <- add.loglike_epi(psi, yvec.sim, 0.1, c(762,1))
-
-# loglikestar <- function(psi,y,Its,dt,x0){
-#   a <- exp(psi[1])
-#   b <- exp(psi[2])
-#   c <- exp(psi[3])
-#   log_like <- sum(dnorm(y, Its, sqrt(c),log=TRUE))
-#   return(log_like)
-# }
-
 add.loglikestar <- function(theta, y, deltat, x0){
     N <- length(y)
-    inc <- 1/deltat #or just 1/deltat
+    inc <- 1/deltat 
     output <- eulerSIR(x0, exp(c(theta[1],theta[2])), deltat, N-1)
-    #index <- c(1+(0:(N-1))*inc)
     output <- output[1+(0:(N-1))*inc, 2]
-    #sd <- exp(theta[3])
-    #if(sd <= 0 || is.nan(sd) || is.infinite(sd)) return(-Inf)
     loglike <- sum(dnorm(y, output, exp(theta[3]), log=TRUE))
-    #if (!is.finite(loglike)) return(-Inf)
     return (loglike)
 }
 
@@ -82,10 +55,7 @@ mh_epi <- function(N,initial,V,y,x0,dt){
   for (i in 2:N){
     psi.star <- psi_mat[i-1,]+mvrnorm(1, c(0,0,0), V)
     log_aprob <- logprior(psi.star)-logprior(psi_mat[i-1,])+add.loglikestar(psi.star,y,dt,x0)-add.loglikestar(psi_mat[i-1,],y,dt,x0)
-    #if (!is.finite(log_aprob)) log_aprob <- -Inf.
-    #print(log_aprob)
     U <- runif(1)
-    #if (is.na(log_aprob) || is.nan(log_aprob)) log_aprob <- -Inf
     if(log(U)<log_aprob){
       psi_mat[i,] <- psi.star
       j <- j+1
@@ -98,49 +68,6 @@ mh_epi <- function(N,initial,V,y,x0,dt){
   return(psi_mat)
 }
 
-
-#tuning
-# pilot1 <- mh_epi(1000, psi, diag(x=0.01,3,3), yvec.sim, yvec)
-# plot(ts(pilot1))
-# 
-# pilot2 <- mh_epi(1000, psi, cov(pilot1), yvec.sim, Its)
-# plot(ts(pilot2))
-# 
-# burnin <- pilot1[250:1000,]
-# plot(ts(burnin))
-# 
-# 
-# 
-# # #other data
-# gtruth <- c(beta=0.3,gamma=0.1, sigma=1)
-# log.gtruth <- log(gtruth)
-# x0 <- c(S=0.99,I=0.01)
-# dt <- 0.1
-# T <- 10
-# yvec <- eulerSIR(x0,gtruth, dt, endT)
-# Its <- yvec[,2]
-# # 
-# # set.seed(123)
-# y_obs <- I_true+rnorm(length(Its),mean=0,sd=1)
-# y <- y_obs
-# chain <- mh_epi(10000, c(0,0,0),diag(x=0.01,3,3), y, Its)
-# plot(ts(chain))
-# 
-# chain2 <- mh_epi(15000, c(0,0,0),(2.38^3/3)*var(chain), y, Its)
-# plot(ts(chain2))
-# 
-# 
-# chain3 <- mh_epi(20000, c(0,0,0),(2.38^3/3)*var(chain2), y, Its)
-# plot(ts(chain3))
-# 
-# par(mfrow=c(3,1))
-# #plot(ts(chain2),ylab="Value",xlab="Iteration",main="Trace plot")
-# hist(chain2[,1],30,xlab="Value",main="Histogram")
-# hist(chain2[,2],30,xlab="Value",main="Histogram")
-# hist(chain2[,3],30,xlab="Value",main="Histogram")
-# par(mfrow=c(1,1))
-
-#retry
 gtruth <- c(beta=exp(-6),gamma=0.5, sigma=2)
 log.gtruth <- log(gtruth)
 x0 <- c(S=762,I=1)
@@ -150,10 +77,11 @@ yvec <- eulerSIR(x0,gtruth, dt, T)
 plot(ts(y))
 Its <- yvec[,2]
 
-#(N,initial,V,y,x0,dt)
-#set.seed(123)
+
+set.seed(123)
 y_obs <- Its+rnorm(length(Its),mean=0,sd=1)
 
+#iterating metropolis hastings to tune via the Rule of Thumb
 chain <- mh_epi(10000, log.gtruth,diag(x=0.01,3,3), y_obs,x0,dt)
 plot(ts(exp(chain)))
 
