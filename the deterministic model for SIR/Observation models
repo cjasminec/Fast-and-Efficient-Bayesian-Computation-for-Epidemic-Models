@@ -127,3 +127,66 @@ AIC.selfmult <- aicfunc(3,as.numeric(test.selfmult))
 AIC.add #134.1436
 AIC.mult #132.6248
 AIC.selfmult #129.6352
+
+#formatting for ggplot2 plots
+#add
+colnames(add.pred)=c("Susceptibles", "Infectives")
+add.pred <- add_column(as.data.frame(add.pred), "Time"=seq(from=0,to=14,length.out=length(add.pred[,1]),.before="Susceptibles"))
+add.pred$lq <- lq.add
+add.pred$uq <- uq.add
+Pts.add <- data.frame(Time=seq(from=0,to=14,length.out=15),
+                      Its=Its.add)
+Pts.y <- data.frame(Time=seq(from=0,to=14,length.out=15),
+                    Its=y)
+
+Add <- ggplot(add.pred,aes(x=Time, y=Infectives))+
+  geom_line()+
+  geom_line(aes(y=lq), colour="lightblue")+
+  geom_line(aes(y=uq),colour="lightblue")+
+  geom_point(Pts.y, mapping = aes(x = Time, y = Its),
+             inherit.aes = FALSE, colour="navy")+
+  theme_minimal()+
+  labs(title="Additive Gaussian") 
+
+#mult
+colnames(mult.pred)=c("Susceptibles", "Infectives")
+mult.pred <- add_column(as.data.frame(mult.pred), "Time"=seq(from=0,to=14,length.out=length(mult.pred[,1]), .before="Susceptibles"))
+mult.pred$lq <- lq.mult
+mult.pred$uq <- uq.mult
+Pts.mult <- data.frame(Time=seq(from=0,to=14,length.out=15),
+                       Its=Its.mult)
+
+Mult <- ggplot(mult.pred,aes(x=Time, y=Infectives))+
+  geom_line()+
+  geom_line(aes(y=lq), colour="lightblue")+
+  geom_line(aes(y=uq), colour="lightblue")+
+  
+  geom_point(Pts.y, mapping = aes(x = Time, y = Its),
+             inherit.aes = FALSE, colour="navy")+
+  theme_minimal()+
+  labs(title="Multiplicative Gaussian")
+
+#selfmult
+plot(ts(selfmult.pred[,2],start=0,deltat=0.01), ylim=c(0,400), ylab="infectives", type="l", main="Poisson De-coupled")
+lines(ts(lq.selfmult,start=0,deltat=0.01), col=2, lty=2)
+lines(ts(uq.selfmult,start=0,deltat=0.01), col=2, lty=2)
+lines(ts(Its.selfmult,start=0,deltat=1),type="p",cex=0.7,col=7)
+
+colnames(selfmult.pred)=c("Susceptibles", "Infectives")
+selfmult.pred <- add_column(as.data.frame(selfmult.pred), "Time"=seq(from=0,to=14,length.out=length(selfmult.pred[,1]), .before="Susceptibles"))
+selfmult.pred$lq <- lq.selfmult
+selfmult.pred$uq <- uq.selfmult
+Pts.selfmult <- data.frame(Time=seq(from=0,to=14,length.out=15),
+                           Its=Its.selfmult)
+
+Selfmult <- ggplot(selfmult.pred,aes(x=Time, y=Infectives))+
+  geom_line()+
+  geom_line(aes(y=lq), colour="lightblue")+
+  geom_line(aes(y=uq), colour= "lightblue")+
+  theme_minimal()+
+  geom_point(Pts.y, mapping = aes(x = Time, y = Its),
+             inherit.aes = FALSE, colour="navy")+
+  labs(title="De-coupled Poisson")
+
+Add+Mult+Selfmult
+
