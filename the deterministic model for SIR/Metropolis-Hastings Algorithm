@@ -1,3 +1,4 @@
+#set up for MH
 add.loglike_epi <- function(theta, y, deltat, x0){
   N <- length(y)
   inc <- 1/deltat
@@ -9,7 +10,7 @@ add.loglike_epi <- function(theta, y, deltat, x0){
   return (loglike)
 }
 
-Like <- add.loglike_epi(psi, yvec.sim, 0.1, c(762,1))
+#Like <- add.loglike_epi(psi, yvec.sim, 0.1, c(762,1))
 
 add.loglikestar <- function(theta, y, deltat, x0){
   N <- length(y)
@@ -31,6 +32,7 @@ mh_epi <- function(N,initial,V,y,x0,dt){
   j=0
   # start algorithm loop
   for (i in 2:N){
+    print(j)
     psi.star <- psi_mat[i-1,]+mvrnorm(1, c(0,0,0), V)
     log_aprob <- logprior(psi.star)-logprior(psi_mat[i-1,])+add.loglikestar(psi.star,y,dt,x0)-add.loglikestar(psi_mat[i-1,],y,dt,x0)
     U <- runif(1)
@@ -47,11 +49,20 @@ mh_epi <- function(N,initial,V,y,x0,dt){
   return(psi_mat)
 }
 
-set.seed(2)
-chain <- mh_epi(10000, log.gtruth,diag(c(0.0001,0.001,0.1)), y,x0,dt)
+gtruth <- c(beta=exp(-6),gamma=0.5, sigma=1)
+log.gtruth <- log(gtruth)
+x0 <- c(S=762,I=1)
+dt <- 0.1
+T <- 14
 
-chain2 <- mh_epi(10000, log.gtruth,0.05*(2.38^3/3)*var(chain), y,x0,dt)
+set.seed(1)
+m <- 10000
+chain <- mh_epi(m, log.gtruth,diag(c(0.0001,0.001,0.1)), y,x0,dt)
+plot(ts(chain), ylab="beta")
 
-chain3 <- mh_epi(10000, log.gtruth,(2.38^3/3)*var(chain2[1000:10000,]), y,x0,dt)
+chain2 <- mh_epi(m, log.gtruth,(2.38^3/3)*var(chain), y_obs,x0,dt)
+colnames(chain2) <- c("Beta", "Gamma", "Sigma")
 
-chain4 <- mh_epi(10000, log.gtruth,0.01*(2.38^3/3)*var(chain3[3000:10000,]), y,x0,dt)
+chain3 <- mh_epi(m, log.gtruth,0.3*(2.38^3/3)*var(chain2), y_obs,x0,dt)
+colnames(chain3) <- c("Beta", "Gamma", "Sigma")
+
