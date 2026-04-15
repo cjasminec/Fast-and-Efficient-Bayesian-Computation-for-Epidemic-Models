@@ -1,48 +1,8 @@
+sim.bsd <- wrap.sims(c(762,1), c(exp(-6),0.5), 0.1, 14, 5)
 
+simd.S <- sim.bsd[[1]]
+simd.I <- sim.bsd[[2]]
 
-
-##############PL#################################################
-S <- matrix(data=c(-1,1,0, -1), 2,2)
-
-SIR_haz <- function(euler, theta){
-  haz <- numeric(length(theta))
-  haz[1] <- theta[1]*euler[1]*euler[2]
-  haz[2] <- theta[2]*euler[2]
-  return (haz)}
-
-
-sim_pl <- function(x0, theta, deltat, endt){
-  #set up
-  n <- endt/deltat+1
-  ret <- matrix(0,n,2)
-  ret[1,1] <- x0[1]
-  ret[1,2] <- x0[2]
-  #hazards
-  haz <- SIR_haz(x0, theta)
-  for(i in 2:n){
-    R1.sim <- rpois(1,haz[1]*deltat)
-    R2.sim <- rpois(1,haz[2]*deltat)
-    R1.sim <- min(R1.sim, ret[i-1,1])#
-    R2.sim <- min(R2.sim, ret[i-1,2])#
-    R <- c(R1.sim, R2.sim)
-    ret[i,] <- ret[i-1,] + (S%*%R)
-    ret[i,] <- pmax(ret[i,], 0)
-    haz <- SIR_haz(ret[i,], theta)
-  }
-  return(ret)
-}
-
-wrap.sims <- function(x0, theta, deltat, endt, sims){
-  n <- endt/deltat+1
-  S.simd <- matrix(0,n,sims )
-  I.simd <- matrix(0,n,sims)
-  for(i in 1:sims){
-    sim <- sim_pl(x0, theta, deltat, endt)
-    S.simd[,i] <- sim[,1]
-    I.simd[,i] <- sim[,2]
-  }
-  return(rbind(S.simd, I.simd))
-}
 y <- c(1,3,6,25,73,221,294,257,236,189,125,67,26,10,3)
 dt=0.05
 set.seed(123)
