@@ -66,3 +66,65 @@ colnames(chain2) <- c("Beta", "Gamma", "Sigma")
 chain3 <- mh_epi(m, log.gtruth,0.3*(2.38^3/3)*var(chain2), y_obs,x0,dt)
 colnames(chain3) <- c("Beta", "Gamma", "Sigma")
 
+par(mfrow=c(2,1))
+set.seed(2)
+chain <- mh_epi(10000, log.gtruth,diag(c(0.0001,0.001,0.1)), y_obs,x0,dt)
+colnames(chain) <- c("beta", "gamma", "sigma")
+plot(ts(chain), main="First Iteration")
+
+#MH iterations for inclusion in diss
+pdf("MH_it1.pdf", width = 9, height = 3.5)
+par(mfrow=c(2,1))
+plot(ts(chain), main="First Iteration")
+dev.off()
+
+pdf("MH_it2.pdf", width = 9, height = 3.5)
+chain2 <- mh_epi(10000, log.gtruth,(2.38^3/3)*var(chain), y_obs,x0,dt)
+colnames(chain2) <- c("beta", "gamma", "sigma")
+plot(ts(chain2), main="Second Iteration")
+dev.off()
+
+#MH iterations for inclusion in diss (in ggplot2)
+pdf("MH_it1.pdf", width = 9, height = 4)
+par(mfrow=c(2,1))
+set.seed(2)
+chain <- as.data.frame(mh_epi(10000, log.gtruth,diag(c(0.0001,0.001,0.1)), y_obs,x0,dt))
+colnames(chain) <- c("beta", "gamma", "sigma")
+first <- add_column(chain, Time=c(1:length(chain[,1])))
+
+a1 <- ggplot(first, aes(x=Time, y=beta))+geom_line()+theme_minimal()+labs(title="First Iteration")+
+  theme(
+    axis.text.x = element_blank(), # remove labels
+    axis.ticks.x = element_blank() # remove ticks
+  )+xlab(" ")
+b1 <- ggplot(first, aes(x=Time, y=gamma))+ geom_line()+theme_minimal()+theme(
+  axis.text.x = element_blank(), # remove labels
+  axis.ticks.x = element_blank() # remove ticks
+)+xlab(" ")
+c1 <- ggplot(first, aes(x=Time, y=sigma))+ geom_line()+theme_minimal()
+
+a1/b1/c1
+
+#plot(ts(chain), main="First Iteration")
+dev.off()
+
+pdf("MH_it2.pdf", width = 9, height = 4)
+chain2 <- as.data.frame(mh_epi(10000, log.gtruth,(2.38^3/3)*var(chain), y_obs,x0,dt))
+colnames(chain2) <- c("beta", "gamma", "sigma")
+#plot(ts(chain2), main="Second Iteration")
+second <- add_column(chain2, Time=c(1:length(chain[,1])))
+
+a2 <- ggplot(second, aes(x=Time, y=beta))+geom_line()+theme_minimal()+labs(title="Second Iteration")+
+  theme(
+  axis.text.x = element_blank(), # remove labels
+  axis.ticks.x = element_blank() # remove ticks
+)+xlab(" ")
+b2 <- ggplot(second, aes(x=Time, y=gamma))+ geom_line()+theme_minimal()+theme(
+  axis.text.x = element_blank(), # remove labels
+  axis.ticks.x = element_blank() # remove ticks
+)+xlab(" ")
+c2 <- ggplot(second, aes(x=Time, y=sigma))+ geom_line()+theme_minimal()
+
+a2/b2/c2
+dev.off()
+
