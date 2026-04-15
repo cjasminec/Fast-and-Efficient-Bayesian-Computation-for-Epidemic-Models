@@ -1,1 +1,98 @@
+S <- matrix(data=c(-1,1,0, -1), 2,2)
 
+SIR_haz <- function(euler, theta){
+  haz <- numeric(length(theta))
+  haz[1] <- theta[1]*euler[1]*euler[2]
+  haz[2] <- theta[2]*euler[2]
+  return (haz)}
+
+sim_pl <- function(x0, theta, deltat, endt){
+  #set up
+  n <- endt/deltat
+  ret <- matrix(0,n,2)
+  ret[1,1] <- x0[1]
+  ret[1,2] <- x0[2]
+  #hazards
+  haz <- SIR_haz(x0, theta)
+  for(i in 2:n){
+    R1.sim <- rpois(1,haz[1]*deltat)
+    R2.sim <- rpois(1,haz[2]*deltat)
+    R <- c(R1.sim, R2.sim)
+    ret[i,] <- ret[i-1,] + (S%*%R)
+    haz <- SIR_haz(ret[i,], theta)
+  }
+  return(ret)
+}
+
+set.seed(132)
+sim.bs <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+plot(ts(sim.bs))
+
+wrap.sims <- function(x0, theta, deltat, endt, sims){
+  n <- endt/deltat
+  S.simd <- matrix(0,n,sims )
+  I.simd <- matrix(0,n,sims)
+  for(i in 1:sims){
+   S.simd[,i] <- sim_pl(x0, theta, deltat, endt)[,1]
+   I.simd[,i] <- sim_pl(x0, theta, deltat, endt)[,2]
+  }
+  return(list(S.simd, I.simd))
+}
+
+#stochastic sample paths
+set.seed(1)
+one <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+two <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+three <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+four <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+five <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+six <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+seven <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+
+plot(ts(one[,1]))
+lines(ts(six[,1]), col="lightblue")
+lines(ts(three[,1]), col="blue")
+lines(ts(four[,1]), col="navy")
+lines(ts(seven[,1]), col="grey")
+
+lines(ts(one[,2]))
+lines(ts(six[,2]), col="lightblue")
+lines(ts(three[,2]), col="blue")
+plot(ts(four[,2]), col="navy")
+lines(ts(seven[,2]), col="grey")
+
+one <- data.frame(Time=seq(1,14, length.out=length(one[,1])), 
+                     Susceptibles=one[,1], 
+                     Infectives=one[,2])
+six <- data.frame(Time=seq(1,14, length.out=length(six[,1])), 
+                  Susceptibles=six[,1], 
+                  Infectives=six[,2])
+three <- data.frame(Time=seq(1,14, length.out=length(three[,1])), 
+                  Susceptibles=three[,1], 
+                  Infectives=three[,2])
+four <- data.frame(Time=seq(1,14, length.out=length(four[,1])), 
+                  Susceptibles=four[,1], 
+                  Infectives=four[,2])
+seven <- data.frame(Time=seq(1,14, length.out=length(seven[,1])), 
+                  Susceptibles=seven[,1], 
+                  Infectives=seven[,2])
+
+sus <- ggplot()+
+  geom_line(one, mapping=aes(x=Time, y=Susceptibles))+
+  geom_line(six, mapping=aes(x=Time, y=Susceptibles), col="blue")+
+  geom_line(three, mapping=aes(x=Time, y=Susceptibles),col="navy")+
+  geom_line(four, mapping=aes(x=Time, y=Susceptibles), col="lightblue")+
+  geom_line(seven, mapping=aes(x=Time, y=Susceptibles), col="grey")+
+  theme_minimal()
+
+inf <- ggplot()+
+  geom_line(one, mapping=aes(x=Time, y=Infectives))+
+  geom_line(six, mapping=aes(x=Time, y=Infectives), col="blue")+
+  geom_line(three, mapping=aes(x=Time, y=Infectives), col="navy")+
+  geom_line(four, mapping=aes(x=Time, y=Infectives), col="lightblue")+
+  geom_line(seven, mapping=aes(x=Time, y=Infectives), col="grey")+
+  theme_minimal()
+sus+inf
+pdf("stochits.pdf", width = 7, height = 3)
+sus+inf
+dev.off()
