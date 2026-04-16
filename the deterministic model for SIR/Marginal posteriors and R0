@@ -1,0 +1,50 @@
+
+gtruth <- c(beta=exp(-6),gamma=0.5, sigma=1)
+log.gtruth <- log(gtruth)
+x0 <- c(S=762,I=1)
+dt <- 0.1
+T <- 14
+yt <- c(1,3,6,25,73,221,294,257,236,189,125,67,26,10,3)
+
+set.seed(2)
+chain <- mh_epi(10000, log.gtruth,diag(c(0.0001,0.001,0.1)), y,x0,dt)
+
+plot(ts(chain), ylab="beta")
+
+chain2 <- mh_epi(10000, log.gtruth,0.05*(2.38^3/3)*var(chain), y,x0,dt)
+plot(ts(chain2))
+
+chain3 <- mh_epi(10000, log.gtruth,(2.38^3/3)*var(chain2[1000:10000,]), y,x0,dt)
+plot(ts(chain3))
+
+chain4 <- mh_epi(10000, log.gtruth,0.01*(2.38^3/3)*var(chain3[3000:10000,]), y,x0,dt)
+plot(ts(chain4))
+
+chain5 <- mh_epi(10000, log.gtruth,0.3*(2.38^2/3)*var(chain4[3000:10000,]), y,x0,dt)
+plot(ts(chain5[1500:10000,]))
+
+
+plot(density(exp(chain4[2000:10000,2])))
+plot(density(exp(chain4[2000:10000,1])))
+R_0dens <- (exp(chain4[2000:10000,1])/exp(chain4[2000:10000,2]))*762
+R_0freq <- (exp(chain4[2000:10000,1])/exp(chain4[2000:10000,2])) #change of vars - JACOBIAN?
+plot(density(R_0dens), main="R0 for density dependent transmission")
+plot(density(R_0freq))
+
+R_0densdf <- data.frame(R0=(exp(chain5[1500:10000,1])*762/exp(chain5[1500:10000,2])))
+#colnames(R_0densdf) <- c("R0")
+
+ggplot(R_0densdf)+
+  geom_density(aes(x=R0))+
+  xlab("R0 value")+
+  theme_minimal()
+
+gtval <- exp(-6)*762/0.5
+
+pdf("R0sirdens.pdf", width = 8, height = 3)
+ggplot(R_0densdf)+
+  geom_density(aes(x=R0))+
+  xlab("R0 value")+
+  geom_vline(aes(xintercept=gtval))
+  theme_minimal()
+dev.off()
