@@ -1,4 +1,4 @@
-#SEIR and incidence
+#SEIR and incidence -CHECK ISSUES WITH PREVALENCE CODE
 
 SEIR_haz <- function(euler, theta){
   haz <- numeric(3)
