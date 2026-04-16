@@ -1,0 +1,65 @@
+y <- c(1,3,6,25,73,221,294,257,236,189,125,67,26,10,3)
+dt=0.05
+set.seed(123)
+N=10000
+S.mat.pl2 = matrix(0,nrow=T/dt+1,ncol=N)
+I.mat.pl2 = matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N){
+  sim <- sim_pl(c(762,1), exp(chain4[i,]), dt, T)
+  S.mat.pl2[,i] <- sim[,1]
+  I.mat.pl2[,i] <- sim[,2]
+}
+
+#Compute the mean and upper/lower 2.5 percentiles of
+#the infective realisations
+
+I.mean.pl2=apply(I.mat.pl2,1,mean)
+I.lq.pl2=apply(I.mat.pl2,1,quantile,0.025)
+I.uq.pl2=apply(I.mat.pl2,1,quantile,0.975)
+
+
+S.mean.pl2 <- apply(S.mat.pl2,1,mean)
+S.lq.pl2 <- apply(S.mat.pl2,1,quantile,0.025)
+S.uq.pl2 <- apply(S.mat.pl2,1,quantile,0.975)
+
+pdf("postpredpl.pdf", width = 8, height = 3)
+par(mfrow=c(1,2))
+plot(ts(I.mean.pl2,start=0,deltat=0.05),ylim=c(0,400), ylab="Infectives")
+lines(ts(I.lq.pl2,start=0,deltat=0.05),col="lightblue")
+lines(ts(I.uq.pl2,start=0,deltat=0.05),col="lightblue")
+lines(ts(y,start=0,deltat=1),type="p", cex=0.5, col="navy")
+
+plot(ts(S.mean.pl2,start=0,deltat=0.05), ylim=c(0,800), ylab="Susceptibles")
+lines(ts(S.lq.pl2,start=0,deltat=0.05),col="lightblue")
+lines(ts(S.uq.pl2,start=0,deltat=0.05),col="lightblue")
+dev.off()
+par(mfrow=c(1,2))
+
+inffwdsims <- data.frame(Time=seq(0,14,length.out=T/dt+1),
+                         means=I.mean.pl2,
+                         lq=I.lq.pl2,
+                         uq=I.uq.pl2)
+
+susfwdsims <- data.frame(Time=seq(0,14,length.out=T/dt+1),
+                         means=S.mean.pl2,
+                         lq=S.lq.pl2,
+                         uq=S.uq.pl2)
+
+one <- ggplot(inffwdsims, aes(x=Time))+
+  geom_line(aes(y=lq), colour="lightblue")+
+  geom_line(aes(y=means))+
+  geom_line(aes(y=uq), colour="lightblue")+
+  geom_point(data=y_obs,mapping=aes(x=Time,y=obs), inherit.aes = FALSE, colour="navy")+
+  ylab("Infectives")+
+  theme_minimal()
+  
+two <- ggplot(susfwdsims, aes(x=Time))+
+    geom_line(aes(y=lq), colour="lightblue")+
+    geom_line(aes(y=means))+
+    geom_line(aes(y=uq), colour="lightblue")+
+    ylab("Susceptibles")+
+  theme_minimal()
+ 
+pdf("postpredplgg.pdf", width = 8, height = 4)
+one+two
+dev.off()
