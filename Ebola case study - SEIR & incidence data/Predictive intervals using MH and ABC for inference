@@ -1,0 +1,130 @@
+abc <- ABCrej(gtruth, y, x0, 100, 100)
+
+m <- 10000
+chain <- mh_epi(m, log.gtruth,diag(c(0.0001,0.001,0.1)), y,x0,dt)
+
+plot(ts(chain), ylab="beta")
+chain2 <- mh_epi(m, log.gtruth,0.2*(2.38^3/3)*var(chain), y_obs,x0,dt)
+colnames(chain2) <- c("Beta", "Gamma", "Sigma")
+plot(ts(chain2))
+plot(ts(chain2[1000:10000,]))
+
+
+T <- 14
+dt <- 0.1
+N=length(chain2[,1])
+SMH.mat = matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  SMH.mat[,i] = eulerSIR(c(762,1),exp(chain2[i,]),dt,T)[,1] #+rnorm(length(SMH.mat[,1]),0,exp(chain2[i,3]))
+}
+
+
+IMH.mat=matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  IMH.mat[,i]=eulerSIR(c(762,1),exp(chain2[i,]),dt,T)[,2]+rnorm(length(IMH.mat[,1]),0,exp(chain2[i,3]))
+}
+
+IMH.mean=apply(IMH.mat,1,mean)
+IMH.lq=apply(IMH.mat,1,quantile,0.025)
+IMH.uq=apply(IMH.mat,1,quantile,0.975)
+
+SMH.mean <- apply(SMH.mat,1,mean)
+SMH.lq <- apply(SMH.mat,1,quantile,0.025)
+SMH.uq <- apply(SMH.mat,1,quantile,0.975)
+
+
+N=length(abc[,1])
+SABC.mat = matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  SABC.mat[,i] = eulerSIR(c(762,1),abc[i,],dt,T)[,1]
+}
+
+
+IABC.mat=matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  IABC.mat[,i]=eulerSIR(c(762,1),abc[i,],dt,T)[,2]
+}
+
+
+IABC.mean120=apply(IABC.mat120,1,mean)
+IABC.lq120=apply(IABC.mat120,1,quantile,0.025)
+IABC.uq120=apply(IABC.mat120,1,quantile,0.975)
+
+
+SABC.mean120 <- apply(SABC.mat120,1,mean)
+SABC.lq120 <- apply(SABC.mat120,1,quantile,0.025)
+SABC.uq120 <- apply(SABC.mat120,1,quantile,0.975)
+
+MH.pred.I <- data.frame(
+  time=seq(0,T,by=dt),
+  means=IMH.mean,
+  lq=IMH.lq,
+  uq=IMH.uq,
+  method="MH"
+)
+
+ABC.pred.I <- data.frame(
+  time=seq(0,T,by=dt),
+  means=IABC.mean,
+  lq=IABC.lq,
+  uq=IABC.uq,
+  method="ABC"
+)
+
+MH.pred.S <- data.frame(
+  time=seq(0,T,by=dt),
+  means=SMH.mean,
+  lq=SMH.lq,
+  uq=SMH.uq,
+  method="MH"
+)
+
+ABC.pred.S <- data.frame(
+  time=seq(0,T,by=dt),
+  means=SABC.mean,
+  lq=SABC.lq,
+  uq=SABC.uq,
+  method="ABC"
+)
+full.pred.I <- rbind(MH.pred.I,ABC.pred.I)
+full.pred.S <- rbind(MH.pred.S,ABC.pred.S)
+data <- data.frame(
+  time=seq(0,14,by=1),
+  cases=y
+)
+
+Ipred <- ggplot(full.pred.I, aes(x=time,colour=method, fill=method))+
+  geom_ribbon(aes(ymin=lq,ymax=uq), alpha=0.2, colour=NA)+
+  geom_line(aes(y=means))+
+  geom_point(data=data, mapping=aes(x=time,y=y), colour="skyblue", inherit.aes=FALSE)+
+  labs(y="Infectives", x="Time")+
+  scale_colour_manual(values = c(
+    "MH"  = "navy",
+    "ABC" = "darkturquoise"
+  )) +
+  scale_fill_manual(values = c(
+    "MH"  = "blue",
+    "ABC" = "turquoise"))+
+  theme_minimal()
+
+Spred <- ggplot(full.pred.S, aes(x=time,colour=method, fill=method))+
+  geom_ribbon(aes(ymin=lq,ymax=uq), alpha=0.2, colour=NA, show.legend=FALSE)+
+  geom_line(aes(y=means), show.legend=FALSE)+
+  #geom_point(data=data, mapping=aes(x=time,y=y), colour="lightblue", inherit.aes=FALSE)+
+  labs(y="Susceptibles", x="Time")+
+  scale_colour_manual(values = c(
+    "MH"  = "navy",
+    "ABC" = "darkturquoise"
+  )) +
+  scale_fill_manual(values = c(
+    "MH"  = "blue",
+    "ABC" = "turquoise"))+
+  theme_minimal()
+
+pdf("sirpredints.pdf", width = 8, height = 3)
+Spred+Ipred
+dev.off()
