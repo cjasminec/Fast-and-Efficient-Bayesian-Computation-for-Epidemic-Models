@@ -1,0 +1,41 @@
+abcmcmc.seir.inc <- function(N,logtheta,V,y,x0,dt,eps){
+  psi_mat <- matrix(0, ncol=4, nrow=N)
+  psi_mat[1,] <- logtheta
+  M <- length(y)
+  j=0
+  # start algorithm loop
+  for (i in 2:N){
+    print(j)
+    log.psi.star <- psi_mat[i-1,]+mvrnorm(1, c(0,0,0,0), V)
+    psi.star <- exp(log.psi.star)
+    #print(psi.star)
+    beta <- psi.star[1]
+    kappa <- psi.star[2]
+    gamma <- psi.star[3]
+    sigma <- psi.star[4]
+    #ABC calc
+    sim <- eulerSEIR(x0,c(beta, kappa, gamma), dt, (M-1)*1/dt)#needs a much smaller timestep
+    simdata <- kappa*sim[,2]*dt
+    pts <- round(seq(1, length(simdata), length.out=M))
+    simdata2 <- simdata[pts]+rnorm(M,0,sigma)
+    dist <- euclidist(y, simdata2) 
+    #print(dist)
+    if (dist<=eps){
+      #work out diff in log of prior - for proposed psi.star and psi_mat[i-1,]
+      ratio <- logprior(log.psi.star)-logprior(psi_mat[i-1,])
+      #take diff, draw unif and compare log of unif with diff
+      U <- runif(1)
+      if(log(U)<ratio){
+        psi_mat[i,] <- log.psi.star
+        j <- j+1
+      }
+      else{
+        psi_mat[i,] <- psi_mat[i-1,]
+      }
+    }else{
+      psi_mat[i,] <- psi_mat[i-1,]
+    }
+  }
+  print(j/(N-1))
+  return(psi_mat)
+}
