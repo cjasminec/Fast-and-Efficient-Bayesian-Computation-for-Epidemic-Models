@@ -1,1 +1,21 @@
 
+ABCrej <-function(theta, y, x0, eps, its){
+  #theta groundtruth params, y observed vals
+  N <- length(y)
+  samp <- matrix(data=NA,its,2)
+  j <- 1
+  while (j<=its){
+    print(j)
+    beta <- rgamma(1,32,11464) #amend this to gamma dist, g,h: 100,10000
+    gamma <- rexp(1,2)
+    thetastar <- c(beta, gamma)
+    simdata <- eulerSIR(x0,thetastar, 0.01, N-1)[,2] #needs a much smaller timestep
+    simdata2 <- simdata[1+(0:14)*100]+ rnorm(15,0,theta[3])
+    dist <- euclidist(y, simdata2)
+    if (dist<=eps){
+      samp[j,] <- thetastar
+      j=j+1
+    }
+  }
+  return(samp)
+} 
