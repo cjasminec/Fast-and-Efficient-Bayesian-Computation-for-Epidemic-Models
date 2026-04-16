@@ -1,0 +1,48 @@
+#working with ebola data (using the attached data already extracted would likely be simpler)
+library(tidyverse)
+data <- read.table("eboladata1.txt", header=TRUE)
+View(data)
+
+gpbycountry <- data |> 
+  group_by(country)
+View(gpbycountry)
+
+#for incidence
+Liberia <- data[,c(1,7:80)] |> 
+  filter(country=="LIBERIA") |> 
+  summarise(Liberia=colSums(across(starts_with("W"))))
+
+SierraLeone <- data[,c(1,7:80)] |> 
+  filter(country=="SIERRA LEONE") |> 
+  summarise(SierraLeone=colSums(across(starts_with("W"))))
+  
+Guinea <- data[,c(1,7:80)] |> 
+  filter(country=="GUINEA") |> 
+  summarise(Guinea=colSums(across(starts_with("W"))))
+  
+cbind(Liberia, Guinea, SierraLeone)
+
+
+countries.inc <- data.frame(
+  "Liberia"=Liberia,
+  "SierraLeone"=SierraLeone,
+  "Guinea"=Guinea
+)
+
+t.countries.inc <- countries.inc |> 
+  add_column("Time"=seq(1, nrow(countries.inc), 1))
+
+
+pdf("incblue.pdf", width = 8, height = 3.5)
+ggplot(t.countries.inc, aes(x=Time))+
+  geom_line(aes(y=Liberia, colour="Liberia"))+
+  geom_line(aes(y=SierraLeone, colour="Sierra Leone"))+
+  geom_line(aes(y=Guinea, colour="Guinea"))+
+  scale_y_continuous(name="Case count")+
+  scale_color_manual(name="Ebola in West Africa 2013-2015",
+                     breaks=c("Liberia", "Sierra Leone", "Guinea"),
+                     values=c("Liberia"="lightblue", "Sierra Leone"="black", "Guinea"="navy"))+
+  theme(legend.title=element_text(size=10),
+        legend.text=element_text(size=7))+
+  theme_minimal()
+dev.off()
