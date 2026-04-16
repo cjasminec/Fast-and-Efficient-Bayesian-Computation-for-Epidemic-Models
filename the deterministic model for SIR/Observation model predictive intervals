@@ -1,0 +1,133 @@
+T <- 14
+dt <- 0.1
+N=10000
+S.mat = matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  S.mat[,i] = eulerSIR(c(762,1),exp(chain4[i,]),dt,T)[,1]
+}
+
+
+I.mat=matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  I.mat[,i]=eulerSIR(c(762,1),exp(chain4[i,]),dt,T)[,2]
+}
+
+
+#Compute the mean and upper/lower 2.5 percentiles of
+#the infective realisations
+
+I.mean=apply(I.mat,1,mean)
+I.lq=apply(I.mat,1,quantile,0.025)
+I.uq=apply(I.mat,1,quantile,0.975)
+
+
+S.mean <- apply(S.mat,1,mean)
+S.lq <- apply(S.mat,1,quantile,0.025)
+S.uq <- apply(S.mat,1,quantile,0.975)
+
+#Predictive for the observation process uses noise, so include this
+
+#Additive noise
+ay.mat=matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  ay.mat[,i]=I.mat[,i]+rnorm(length(I.mat[,i]),0,exp(chain4[i,3]))
+}
+ay.mean=apply(ay.mat,1,mean)
+ay.lq=apply(ay.mat,1,quantile,0.025)
+ay.uq=apply(ay.mat,1,quantile,0.975)
+
+plot(ts(ay.mean,start=0,deltat=0.1),ylim=c(0,400), ylab="Infectives")
+lines(ts(ay.lq,start=0,deltat=0.1),col=2)
+lines(ts(ay.uq,start=0,deltat=0.1),col=2)
+lines(ts(y,start=0,deltat=1),type="p", cex=0.65, col=1)
+
+#Decoupled Poisson noise
+smy.mat=matrix(0,nrow=T/dt+1,ncol=N)
+for(i in 1:N)
+{
+  smy.mat[,i]=rnorm(length(I.mat[,i]),I.mat[,i],sqrt(I.mat[,i])*exp(chain4[i,3]))
+}
+smy.mean=apply(smy.mat,1,mean)
+smy.lq=apply(smy.mat,1,quantile,0.025)
+smy.uq=apply(smy.mat,1,quantile,0.975)
+
+plot(ts(smy.mean,start=0,deltat=0.1),ylim=c(0,400), ylab="Infectives")
+lines(ts(smy.lq,start=0,deltat=0.1),col=2)
+lines(ts(smy.uq,start=0,deltat=0.1),col=2)
+lines(ts(y,start=0,deltat=1),type="p", cex=0.65, col=1)
+
+#add pred ggplot
+smy <- data.frame(time=seq(0,14,length.out=141),
+                  mean=smy.mean,
+                 lq=smy.lq,
+                 uq=smy.uq)
+ay <- data.frame(time=seq(0,14,length.out=141),
+                 mean=ay.mean,
+                  lq=ay.lq,
+                  uq=ay.uq)
+yt <- data.frame(time=seq(0,14, length.out=15),
+                 yt=y)
+
+SMY <- ggplot(smy)+
+geom_line(aes(x=time, y=mean))+
+geom_line(aes(x=time, y=lq), colour="lightblue")+
+geom_line(aes(x=time, y=uq), colour="lightblue")+
+geom_point(yt,mapping=aes(x=time, y=yt), inherit.aes=FALSE, colour="navy")+
+  theme_minimal()+
+  labs(title="Decoupled Poisson", y="  ")
+
+
+AY <- ggplot(ay)+
+  geom_line(aes(x=time, y=mean))+
+  geom_line(aes(x=time, y=lq), colour="lightblue")+
+  geom_line(aes(x=time, y=uq), colour="lightblue")+
+  geom_point(yt,mapping=aes(x=time, y=yt), inherit.aes=FALSE, colour="navy")+
+  theme_minimal()+
+  labs(title="Additive Gaussian", y="infectives")
+
+AY+SMY
+  
+pdf("obsmodpredcomp.pdf", width = 9, height = 3.5)
+AY+SMY
+dev.off()
+
+
+#predictives for inclusion in diss
+pdf("MCMCpredints.pdf", width = 7, height = 3.5)
+plot(ts(y.mean,start=0,deltat=0.1),ylim=c(0,400), ylab="Infectives")
+lines(ts(y.lq,start=0,deltat=0.1),col=2)
+lines(ts(y.uq,start=0,deltat=0.1),col=2)
+lines(ts(y_obs,start=0,deltat=1),type="p", cex=0.65, col=1)
+dev.off()
+
+
+
+
+#predictives for inclusion in diss
+pdf("MCMCpredintsblue.pdf", width = 7, height = 3.5)
+
+y <- data.frame(Mean=ay.mean,
+                lq=ay.lq,
+                uq=ay.uq)
+y_obs <- data.frame(obs=yt,
+                    Time=seq(0,14,length.out=length(yt)))
+
+y$Time <- seq(0,14,length.out=(length(ay.mean)))
+
+y.plot <- ggplot(y,aes(x=Time,y=Mean))+
+  geom_line()+
+  geom_line(aes(y=lq), colour="lightblue")+
+  geom_line(aes(y=uq), colour="lightblue")+
+  geom_point(data=y_obs,mapping=aes(x=Time,y=obs), inherit.aes = FALSE, colour="navy")+
+  theme_minimal()
+
+y.plot
+
+# plot(ts(y.mean,start=0,deltat=0.1),ylim=c(0,400), ylab="Infectives")
+# lines(ts(y.lq,start=0,deltat=0.1),col=2)
+# lines(ts(y.uq,start=0,deltat=0.1),col=2)
+# lines(ts(y_obs,start=0,deltat=1),type="p", cex=0.65, col=1)
+dev.off()
