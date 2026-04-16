@@ -65,7 +65,85 @@ two <- ggplot(susfwdsims, aes(x=Time))+
     geom_line(aes(y=uq), colour="lightblue")+
     ylab("Susceptibles")+
   theme_minimal()
+
+#PL for different vals of dt - gets more accurate to Gillespie's exact sim
+
+set.seed(142)
+comp <- eulerSIR(c(762,1), c(exp(-6),0.5), 0.01, 14)
+sim.bsd01 <- sim_pl(c(762,1), c(exp(-6),0.5), 0.01, 14)
+sim.bsd1 <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
+sim.bsd2 <- sim_pl(c(762,1), c(exp(-6),0.5), 0.2, 14)
+sim.bsd5 <- sim_pl(c(762,1), c(exp(-6),0.5), 0.5, 14)
+
+sim.bsd001 <- sim_pl(c(762,1), c(exp(-6),0.5), 0.001, 14)
+
+sim.bsd001t <- data.frame(Time=seq(1,14,length.out=(length(sim.bsd001[,1]))),
+                         Infectives=sim.bsd001[,2],
+                         Susceptibles=sim.bsd001[,1],
+                         method="deltat = 0.001")
+sim.bsd01t <- data.frame(Time=seq(1,14,length.out=(length(sim.bsd01[,1]))),
+                         Infectives=sim.bsd01[,2],
+                         Susceptibles=sim.bsd01[,1],
+                         method="deltat = 0.01")
+sim.bsd1t <- data.frame(Time=seq(1,14,length.out=(length(sim.bsd1[,1]))),
+                         Infectives=sim.bsd1[,2],
+                         Susceptibles=sim.bsd1[,1],
+                        method="deltat = 0.1")
+sim.bsd2t <- data.frame(Time=seq(1,14,length.out=(length(sim.bsd2[,1]))),
+                        Infectives=sim.bsd2[,2],
+                        Susceptibles=sim.bsd2[,1],
+                        method="deltat = 0.2")
+sim.bsd5t <- data.frame(Time=seq(1,14,length.out=(length(sim.bsd5[,1]))),
+                        Infectives=sim.bsd5[,2],
+                        Susceptibles=sim.bsd5[,1],
+                        method="deltat = 0.5")
+compt <- data.frame(Time=seq(1,14,length.out=(length(comp[,1]))),
+                    Infectives=comp[,2],
+                    Susceptibles=comp[,1],
+                    method="deterministic")
+sims <- rbind(sim.bsd001t,sim.bsd01t,sim.bsd1t,sim.bsd2t,sim.bsd5t, compt)
+
+plot(ts(sim.bsd01))
+plot(ts(sim.bsd1))
+plot(ts(sim.bsd2))
+plot(ts(sim.bsd5))
+plot(ts(comp))
+plot(ts(sim.bsd001))
+
+
+infpl <- ggplot(sims, aes(x=Time, y=Infectives, colour=method))+
+  geom_line(show.legend=FALSE)+
+  scale_colour_manual(values = c(
+    "deltat = 0.001" = "darkturquoise",
+    "deltat = 0.01"  = "navy",
+    "deltat = 0.1" = "blue",
+    "deltat = 0.2" = "skyblue",
+    "deltat = 0.5" = "darkgrey",
+    "deterministic" = "black"#det uses dt=0.01
+  )) +
+  theme_minimal()
+
+suspl <- ggplot(sims, aes(x=Time, y=Susceptibles, colour=method))+
+  geom_line()+
+  scale_colour_manual(values = c(
+    "deltat = 0.001" = "darkturquoise",
+    "deltat = 0.01"  = "navy",
+    "deltat = 0.1" = "blue",
+    "deltat = 0.2" = "skyblue",
+    "deltat = 0.5" = "darkgrey",
+    "deterministic" = "black"#det uses dt=0.01
+  )) +
+  theme_minimal()
+
+infpl/suspl
+infpl+suspl
+
+pdf("pldtcomp.pdf", width = 8, height = 3)
+infpl+suspl
+dev.off()
+
  
 pdf("postpredplgg.pdf", width = 8, height = 4)
 one+two
 dev.off()
+
