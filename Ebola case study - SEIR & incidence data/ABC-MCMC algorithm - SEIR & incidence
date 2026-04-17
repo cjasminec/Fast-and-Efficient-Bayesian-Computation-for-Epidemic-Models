@@ -39,3 +39,61 @@ abcmcmc.seir.inc <- function(N,logtheta,V,y,x0,dt,eps){
   print(j/(N-1))
   return(psi_mat)
 }
+
+#non-incidence
+euclidist <- function(y, ysimd){
+  # dist <- (1/length(y))*abs(sum(y)-sum(ysimd))
+  dist <- sqrt(sum((y - ysimd)^2))
+  return(dist)
+}
+
+logprior <- function(psi.star){
+  logpr <- (sum(c(dgamma(exp(psi.star[1]),2,50000, log=TRUE),
+                  dgamma(exp(psi.star[2]),10,10, log=TRUE),
+                  dgamma(exp(psi.star[3]),5,4.6, log=TRUE),
+                  dgamma(exp(psi.star[4]), shape = 2, rate = 2/40, log = TRUE))))
+  return(logpr+sum(psi.star[1:4]))
+}
+
+#prior for sigma?
+abcmcmc.seir <- function(N,logtheta,V,y,x0,dt,eps){
+  psi_mat <- matrix(0, ncol=4, nrow=N)
+  psi_mat[1,] <- logtheta
+  j=0
+  # start algorithm loop
+  for (i in 2:N){
+    print(j)
+    log.psi.star <- psi_mat[i-1,]+mvrnorm(1, c(0,0,0,0), V)
+    psi.star <- exp(log.psi.star)
+    #print(psi.star)
+    beta <- psi.star[1]
+    kappa <- psi.star[2]
+    gamma <- psi.star[3]
+    sigma <- psi.star[4]
+    #ABC calc
+    M <- length(y)
+    simdata <- eulerSEIR(x0,c(beta, kappa, gamma), dt, M-1)[,3] #needs a much smaller timestep
+    pts <- seq(1, length(simdata), length.out=M)
+    simdata2 <- simdata[pts]+rnorm(M,0,sigma)
+    dist <- euclidist(y, simdata2) 
+    #print(dist)
+    if (dist<=eps){
+      #work out diff in log of prior - for proposed psi.star and psi_mat[i-1,]
+      ratio <- logprior(log.psi.star)-logprior(psi_mat[i-1,])
+      #take diff, draw unif and compare log of unif with diff
+      U <- runif(1)
+      if(log(U)<ratio){
+        psi_mat[i,] <- log.psi.star
+        j <- j+1
+      }
+      else{
+        psi_mat[i,] <- psi_mat[i-1,]
+      }
+    }else{
+      psi_mat[i,] <- psi_mat[i-1,]
+    }
+  }
+  print(j/(N-1))
+  return(psi_mat)
+}
+
