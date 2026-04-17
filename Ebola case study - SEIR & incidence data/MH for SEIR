@@ -1,0 +1,60 @@
+#how do we do incidence?
+add.loglike_epi <- function(theta, y, deltat, x0){
+  N <- length(y)
+  inc <- 1/deltat
+  output <- eulerSIR(x0, exp(c(theta[1],theta[2])), deltat, N-1)
+  index <- 1+(0:(N-1))*inc
+  output <- output[index, 2]
+  loglikeindiv <- dnorm(y, output, exp(theta[3]), log=TRUE)
+  loglike <- sum(loglikeindiv)
+  return (loglike)
+}
+
+add.loglikeseir <- function(theta, y, deltat, x0){
+  N <- length(y)
+  inc <- 1/deltat 
+  output <- eulerSEIR(x0, exp(c(theta[1],theta[2], theta[3])), deltat, N-1)
+  output <- output[1+(0:(N-1))*inc, 3]
+  loglike <- sum(dnorm(y, output, exp(theta[4]), log=TRUE))
+  return (loglike)
+}
+
+#priors:
+#beta <- rgamma(1,2,50000)
+#gamma <- rgamma(1,10,10)
+#sigma <- rgamma(1,5,4.6)
+
+logprior.seir <- function(psi.star){
+  #return(sum(dgamma(psi.star, 2,50000,log=TRUE)))
+  logpr <- (sum(c(dgamma(exp(psi.star[1]),2,50000, log=TRUE),
+             dgamma(exp(psi.star[2]),10,10, log=TRUE),
+             dgamma(exp(psi.star[3]),5,4.6, log=TRUE))))
+  return(logpr+sum(psi.star[1:3]))
+}
+
+#to find /simulate log(pi given psi)
+mh_epi.seir <- function(N,theta,V,y,x0,dt){
+  psi_mat <- matrix(0, ncol=4, nrow=N)
+  psi_mat[1,] <- theta
+  actloglike <- add.loglikeseir(theta,y,dt,x0)
+  actlogprior <- logprior.seir(theta)
+  j=0
+  # start algorithm loop
+  for (i in 2:N){
+    print(j)
+    psi.star <- psi_mat[i-1,]+mvrnorm(1, c(0,0,0,0), V)
+    log_aprob <- logprior.seir(psi.star)-actlogprior+add.loglikeseir(psi.star,y,dt,x0)-actloglike
+    U <- runif(1)
+    if(log(U)<log_aprob){
+      psi_mat[i,] <- psi.star
+      actloglike <- add.loglikeseir(psi.star,y,dt,x0)
+      actlogprior <- logprior.seir(psi.star)
+      j <- j+1
+    }else{
+      psi_mat[i,] <- psi_mat[i-1,]
+    }
+  }
+  
+  print(j/(N-1))
+  return(psi_mat)
+}
