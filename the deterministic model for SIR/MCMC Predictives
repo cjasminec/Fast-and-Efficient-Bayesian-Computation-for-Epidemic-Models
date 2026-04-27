@@ -100,28 +100,11 @@ plot(ts(chain4))
 
 #R_0 marginal posterior code
 
-plot(density(exp(chain2[2000:10000,2])))
-plot(density(exp(chain2[2000:10000,1])))
 R_0dens <- (exp(chain2[2000:10000,1])/exp(chain2[2000:10000,2]))*763
 plot(density(R_0dens), main="R0 for density dependent transmission")
 
 R_0densdf <- data.frame(R0=(exp(chain2[2000:10000,1])/exp(chain2[2000:10000,2]))*763)
 colnames(R_0densdf) <- c("R0")
-
-ggplot(R_0densdf)+
-  geom_density(aes(x=R_0dens))+
-  xlab("R0 value")+
-  theme_minimal()
-
-gtval <- exp(-6)*0.5*763 #groundtruth value (using prior parameters)
-
-pdf("R0sirdens.pdf", width = 8, height = 3)
-ggplot(R_0densdf)+
-  geom_density(aes(x=R_0dens))+
-  xlab("R0 value")+
-  geom_vline(aes(xintercept=gtval))
-  theme_minimal()
-dev.off()
 
 chain3 <- mh_epi(10000, log.gtruth,0.2*(2.38^3/3)*var(chain2), y_obs,x0,dt)
 plot(ts(chain3))
@@ -184,64 +167,3 @@ smy.mean=apply(smy.mat,1,mean)
 smy.lq=apply(smy.mat,1,quantile,0.025)
 smy.uq=apply(smy.mat,1,quantile,0.975)
 
-plot(ts(smy.mean,start=0,deltat=0.1),ylim=c(0,400), ylab="Infectives")
-lines(ts(smy.lq,start=0,deltat=0.1),col=2)
-lines(ts(smy.uq,start=0,deltat=0.1),col=2)
-lines(ts(y,start=0,deltat=1),type="p", cex=0.65, col=1)
-
-#Predictive ggplot
-smy <- data.frame(time=seq(0,14,length.out=141),
-                  mean=smy.mean,
-                 lq=smy.lq,
-                 uq=smy.uq)
-ay <- data.frame(time=seq(0,14,length.out=141),
-                 mean=ay.mean,
-                  lq=ay.lq,
-                  uq=ay.uq)
-yt <- data.frame(time=seq(0,14, length.out=15),
-                 yt=y)
-
-SMY <- ggplot(smy)+
-geom_line(aes(x=time, y=mean))+
-geom_line(aes(x=time, y=lq), colour="lightblue")+
-geom_line(aes(x=time, y=uq), colour="lightblue")+
-geom_point(yt,mapping=aes(x=time, y=yt), inherit.aes=FALSE, colour="navy")+
-  theme_minimal()+
-  labs(title="Decoupled Poisson", y="  ")
-
-
-AY <- ggplot(ay)+
-  geom_line(aes(x=time, y=mean))+
-  geom_line(aes(x=time, y=lq), colour="lightblue")+
-  geom_line(aes(x=time, y=uq), colour="lightblue")+
-  geom_point(yt,mapping=aes(x=time, y=yt), inherit.aes=FALSE, colour="navy")+
-  theme_minimal()+
-  labs(title="Additive Gaussian", y="infectives")
-
-AY+SMY
-  
-pdf("obsmodpredcomp.pdf", width = 9, height = 3.5)
-AY+SMY
-dev.off()
-
-#predictives for inclusion in diss
-pdf("MCMCpredintsblue.pdf", width = 7, height = 3.5)
-
-y <- data.frame(Mean=ay.mean,
-                lq=ay.lq,
-                uq=ay.uq)
-y_obs <- data.frame(obs=yt,
-                    Time=seq(0,14,length.out=length(yt)))
-
-y$Time <- seq(0,14,length.out=(length(ay.mean)))
-
-y.plot <- ggplot(y,aes(x=Time,y=Mean))+
-  geom_line()+
-  geom_line(aes(y=lq), colour="lightblue")+
-  geom_line(aes(y=uq), colour="lightblue")+
-  geom_point(data=y_obs,mapping=aes(x=Time,y=obs), inherit.aes = FALSE, colour="navy")+
-  theme_minimal()
-
-y.plot
-
-dev.off()
