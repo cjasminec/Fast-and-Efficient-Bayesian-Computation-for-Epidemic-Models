@@ -32,19 +32,3 @@ plot(density(R_0dens), main="R0 for density dependent transmission")
 plot(density(R_0freq))
 
 R_0densdf <- data.frame(R0=(exp(chain5[1500:10000,1])*762/exp(chain5[1500:10000,2])))
-#colnames(R_0densdf) <- c("R0")
-
-ggplot(R_0densdf)+
-  geom_density(aes(x=R0))+
-  xlab("R0 value")+
-  theme_minimal()
-
-gtval <- exp(-6)*762/0.5
-
-pdf("R0sirdens.pdf", width = 8, height = 3)
-ggplot(R_0densdf)+
-  geom_density(aes(x=R0))+
-  xlab("R0 value")+
-  geom_vline(aes(xintercept=gtval))
-  theme_minimal()
-dev.off()
