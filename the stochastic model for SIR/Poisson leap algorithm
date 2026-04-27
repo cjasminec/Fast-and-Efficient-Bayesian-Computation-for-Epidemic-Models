@@ -60,39 +60,3 @@ lines(ts(six[,2]), col="lightblue")
 lines(ts(three[,2]), col="blue")
 plot(ts(four[,2]), col="navy")
 lines(ts(seven[,2]), col="grey")
-
-one <- data.frame(Time=seq(1,14, length.out=length(one[,1])), 
-                     Susceptibles=one[,1], 
-                     Infectives=one[,2])
-six <- data.frame(Time=seq(1,14, length.out=length(six[,1])), 
-                  Susceptibles=six[,1], 
-                  Infectives=six[,2])
-three <- data.frame(Time=seq(1,14, length.out=length(three[,1])), 
-                  Susceptibles=three[,1], 
-                  Infectives=three[,2])
-four <- data.frame(Time=seq(1,14, length.out=length(four[,1])), 
-                  Susceptibles=four[,1], 
-                  Infectives=four[,2])
-seven <- data.frame(Time=seq(1,14, length.out=length(seven[,1])), 
-                  Susceptibles=seven[,1], 
-                  Infectives=seven[,2])
-
-sus <- ggplot()+
-  geom_line(one, mapping=aes(x=Time, y=Susceptibles))+
-  geom_line(six, mapping=aes(x=Time, y=Susceptibles), col="blue")+
-  geom_line(three, mapping=aes(x=Time, y=Susceptibles),col="navy")+
-  geom_line(four, mapping=aes(x=Time, y=Susceptibles), col="lightblue")+
-  geom_line(seven, mapping=aes(x=Time, y=Susceptibles), col="grey")+
-  theme_minimal()
-
-inf <- ggplot()+
-  geom_line(one, mapping=aes(x=Time, y=Infectives))+
-  geom_line(six, mapping=aes(x=Time, y=Infectives), col="blue")+
-  geom_line(three, mapping=aes(x=Time, y=Infectives), col="navy")+
-  geom_line(four, mapping=aes(x=Time, y=Infectives), col="lightblue")+
-  geom_line(seven, mapping=aes(x=Time, y=Infectives), col="grey")+
-  theme_minimal()
-sus+inf
-pdf("stochits.pdf", width = 7, height = 3)
-sus+inf
-dev.off()
