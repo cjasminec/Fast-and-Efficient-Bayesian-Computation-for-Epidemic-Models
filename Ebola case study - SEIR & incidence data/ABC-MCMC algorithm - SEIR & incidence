@@ -14,7 +14,7 @@ abcmcmc.seir.inc <- function(N,logtheta,V,y,x0,dt,eps){
     gamma <- psi.star[3]
     sigma <- psi.star[4]
     #ABC calc
-    sim <- eulerSEIR(x0,c(beta, kappa, gamma), dt, (M-1)*1/dt)#needs a much smaller timestep
+    sim <- eulerSEIR(x0,c(beta, kappa, gamma), dt, (M-1))#needs a much smaller timestep
     simdata <- kappa*sim[,2]*dt
     pts <- round(seq(1, length(simdata), length.out=M))
     simdata2 <- simdata[pts]+rnorm(M,0,sigma)
@@ -40,7 +40,6 @@ abcmcmc.seir.inc <- function(N,logtheta,V,y,x0,dt,eps){
   return(psi_mat)
 }
 
-#non-incidence
 euclidist <- function(y, ysimd){
   # dist <- (1/length(y))*abs(sum(y)-sum(ysimd))
   dist <- sqrt(sum((y - ysimd)^2))
@@ -55,7 +54,7 @@ logprior <- function(psi.star){
   return(logpr+sum(psi.star[1:4]))
 }
 
-#prior for sigma?
+#for prevalence
 abcmcmc.seir <- function(N,logtheta,V,y,x0,dt,eps){
   psi_mat <- matrix(0, ncol=4, nrow=N)
   psi_mat[1,] <- logtheta
