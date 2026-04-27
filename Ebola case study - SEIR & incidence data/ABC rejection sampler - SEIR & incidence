@@ -1,6 +1,6 @@
+#both for incidence!
 #deterministic:
-
-ABCrej.seir.inc <-function(theta, y, x0, eps, its){
+ABCrej.seir.inc <-function(theta, y, x0, eps, its,T){
   #theta groundtruth params, y observed vals
   N <- length(y)
   samp <- matrix(data=NA,its,3)
@@ -12,7 +12,7 @@ ABCrej.seir.inc <-function(theta, y, x0, eps, its){
     gamma <- rgamma(1,10,10)
     sigma <- sqrt(20)
     thetastar <- c(beta, kappa, gamma)
-    simdata <- eulerSEIR.inc(x0,thetastar, 0.05, N-1,N) #needs a much smaller timestep
+    simdata <- eulerSEIR.inc(x0,thetastar, 0.1,T) #needs a much smaller timestep
     pts <- seq(1, length(simdata), length.out=N)
     simdata2 <- simdata[pts]+rnorm(N,0,sigma)
     dist <- euclidist(y, simdata2)
@@ -25,7 +25,7 @@ ABCrej.seir.inc <-function(theta, y, x0, eps, its){
 } 
 
 #stochastic:
-ABCrej.PL.inc <-function(theta, y, x0, eps, its){
+ABCrej.PL.inc <-function(theta, y, x0, eps, its, T){
   #theta groundtruth params, y observed vals
   N <- length(y)
   samp <- matrix(data=NA,its,3)
@@ -39,7 +39,7 @@ ABCrej.PL.inc <-function(theta, y, x0, eps, its){
     gamma <- rgamma(1,10,10)
     sigma <- 20
     thetastar <- c(beta, kappa, gamma)
-    simdata <- sim_pl.inc(x0,thetastar, 0.01, N-1) #needs a much smaller timestep
+    simdata <- sim_pl.inc(x0,thetastar, 0.01, T) #needs a much smaller timestep
     simdata2 <- simdata[pts]+rnorm(N,0,sigma)
     dist <- euclidist(y, simdata2)
     #dist <- euclidist(log(y+1), log(simdata2+1))
