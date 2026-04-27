@@ -1,0 +1,31 @@
+#using the algorithms as follows to compute efficiency from ESS and CPU time as follows.
+
+library(mcmcse)
+theta <- c(0.000045,2, 1.5, 100)
+log.gtruth <- log(theta)
+system.time(abc.rs100 <- ABCrej.seir.inc(theta, y, x0, 2000, 1000))
+#elapsed:25.73   ESS:1000 eff:38.86513797
+system.time(mcmcinc100a <- abcmcmc.seir.inc(1000, log.gtruth, diag(c(0.01,0.01,0.01,0.15)), y, x0, 0.1, 2000, T))
+plot(ts(mcmcinc100a))
+system.time(mcmcinc100 <- abcmcmc.seir.inc(10000, log.gtruth, (2.38^2/4)*var(mcmcinc100a[200:1000,]), y, x0, 0.1, 2000, T))
+#elapsed:39.85   ESS:451.1471 eff:11.32113174
+
+theta <- c(0.000045,2, 1.5, 120)
+log.gtruth <- log(theta)
+system.time(abc.rs120 <- ABCrej.seir.inc(theta, y, x0, 2000, 1000))
+#elapsed:28.62  ESS:1000 eff:34.94060098
+system.time(mcmcinc120a <- abcmcmc.seir.inc(1000, log.gtruth, diag(c(0.01,0.01,0.01,0.15)), y, x0, 0.1, 2000, T))
+plot(ts(mcmcinc120a))
+system.time(mcmcinc120 <- abcmcmc.seir.inc(10000, log.gtruth, (2.38^2/4)*var(mcmcinc120a[200:1000,]), y, x0, 0.1, 2000, T))
+#elapsed:39.79   ESS:479.6734 eff:12.0551244
+
+theta <- c(0.000045,2, 1.5, 150)
+log.gtruth <- log(theta)
+system.time(abc.rs150 <- ABCrej.seir.inc(theta, y, x0, 2000, 1000))
+#elapsed:28.51  ESS:1000 eff:35.07541214
+system.time(mcmcinc150a <- abcmcmc.seir.inc(1000, log.gtruth, diag(c(0.01,0.01,0.01,0.15)), y, x0, 0.1, 2000, T))
+plot(ts(mcmcinc150a))
+system.time(mcmcinc150 <- abcmcmc.seir.inc(10000, log.gtruth, (2.38^2/4)*var(mcmcinc150a[200:1000,]), y, x0, 0.1, 2000, T))
+#elapsed:45.05  ESS:468.4405 eff:10.39823529
+
+#and so on.
