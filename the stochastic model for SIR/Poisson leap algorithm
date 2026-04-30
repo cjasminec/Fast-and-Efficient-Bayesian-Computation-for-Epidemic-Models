@@ -29,14 +29,15 @@ sim.bs <- sim_pl(c(762,1), c(exp(-6),0.5), 0.1, 14)
 plot(ts(sim.bs))
 
 wrap.sims <- function(x0, theta, deltat, endt, sims){
-  n <- endt/deltat
+  n <- endt/deltat+1
   S.simd <- matrix(0,n,sims )
   I.simd <- matrix(0,n,sims)
   for(i in 1:sims){
-   S.simd[,i] <- sim_pl(x0, theta, deltat, endt)[,1]
-   I.simd[,i] <- sim_pl(x0, theta, deltat, endt)[,2]
+    sim <- sim_pl(x0, theta, deltat, endt)
+    S.simd[,i] <- sim[,1]
+    I.simd[,i] <- sim[,2]
   }
-  return(list(S.simd, I.simd))
+  return(rbind(S.simd, I.simd))
 }
 
 #stochastic sample paths
