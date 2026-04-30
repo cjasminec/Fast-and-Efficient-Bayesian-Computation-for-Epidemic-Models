@@ -1,7 +1,7 @@
 #for incidence
 add.loglikeseir.inc <- function(theta, y, deltat, x0, T){
   N <- length(y)
-  inc <- 1/deltat 
+  inc <- round(1/deltat) 
   incidence <- eulerSEIR.inc(x0, exp(c(theta[1],theta[2], theta[3])), deltat, T)
   output <- incidence[1+(0:(N-1))*inc]
   
