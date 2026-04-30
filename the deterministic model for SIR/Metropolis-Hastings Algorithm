@@ -10,7 +10,6 @@ add.loglike_epi <- function(theta, y, deltat, x0){
   return (loglike)
 }
 
-#Like <- add.loglike_epi(psi, yvec.sim, 0.1, c(762,1))
 
 add.loglikestar <- function(theta, y, deltat, x0){
   N <- length(y)
@@ -49,21 +48,5 @@ mh_epi <- function(N,initial,V,y,x0,dt){
   return(psi_mat)
 }
 
-gtruth <- c(beta=exp(-6),gamma=0.5, sigma=1)
-log.gtruth <- log(gtruth)
-x0 <- c(S=762,I=1)
-dt <- 0.1
-T <- 14
-
-set.seed(1)
-m <- 10000
-chain <- mh_epi(m, log.gtruth,diag(c(0.0001,0.001,0.1)), y,x0,dt)
-plot(ts(chain), ylab="beta")
-
-chain2 <- mh_epi(m, log.gtruth,(2.38^3/3)*var(chain), y,x0,dt)
-colnames(chain2) <- c("Beta", "Gamma", "Sigma")
-
-chain3 <- mh_epi(m, log.gtruth,0.3*(2.38^3/3)*var(chain2), y,x0,dt)
-colnames(chain3) <- c("Beta", "Gamma", "Sigma")
 
 
