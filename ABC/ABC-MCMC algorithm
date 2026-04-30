@@ -1,4 +1,8 @@
 
+logprior <- function(psi.star){
+  return(sum(dnorm(psi.star, 0,1,log=TRUE)))
+}
+
 abc.mcmc <- function(N,logtheta,V,y,x0,dt,eps){
   psi_mat <- matrix(0, ncol=3, nrow=N)
   psi_mat[1,] <- logtheta
